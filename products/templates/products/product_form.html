@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block extra_css %}
+<style>
+    .image-preview {
+        max-width: 150px;
+        max-height: 150px;
+        margin-top: 10px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        padding: 5px;
+    }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .help-text {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas {% if 'add' in request.path %}fa-plus-circle{% else %}fa-edit{% endif %} text-primary"></i>
+                    {{ title }}
+                </h2>
+                <a href="{% url 'products:product_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right"></i> العودة إلى القائمة
+                </a>
+            </div>
+
+            <div class="card card-custom">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle text-info"></i> معلومات المنتج (مواد بناء)</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- العمود الأيمن -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.name.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-tag text-danger"></i> {{ form.name.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.name }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.barcode.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-barcode text-info"></i> {{ form.barcode.label }}
+                                    </label>
+                                    {{ form.barcode }}
+                                    <div class="help-text">رقم فريد للمنتج (يمكن مسحه من الماسح الضوئي)</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-list text-warning"></i> {{ form.category.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.category }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.warehouse.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-warehouse text-primary"></i> {{ form.warehouse.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.warehouse }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.unit.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-ruler text-secondary"></i> {{ form.unit.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.unit }}
+                                </div>
+                            </div>
+
+                            <!-- العمود الأيسر -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.purchase_price.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-money-bill text-success"></i> {{ form.purchase_price.label }}
+                                    </label>
+                                    {{ form.purchase_price }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.sale_price.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-dollar-sign text-success"></i> {{ form.sale_price.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.sale_price }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.current_quantity.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-cubes text-primary"></i> {{ form.current_quantity.label }}
+                                    </label>
+                                    {{ form.current_quantity }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.min_quantity.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-exclamation-triangle text-warning"></i> {{ form.min_quantity.label }}
+                                    </label>
+                                    {{ form.min_quantity }}
+                                    <div class="help-text">ينبه عند وصول الكمية لهذا الرقم</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- حقول خاصة بمواد البناء -->
+                        <hr class="my-4">
+                        <h5 class="mb-3"><i class="fas fa-hard-hat text-secondary"></i> خصائص إضافية (مواد بناء)</h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.weight_kg.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-weight-hanging"></i> {{ form.weight_kg.label }}
+                                    </label>
+                                    {{ form.weight_kg }}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.length_m.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-arrows-alt-h"></i> {{ form.length_m.label }}
+                                    </label>
+                                    {{ form.length_m }}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.color.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-palette"></i> {{ form.color.label }}
+                                    </label>
+                                    {{ form.color }}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.manufacturer.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-industry"></i> {{ form.manufacturer.label }}
+                                    </label>
+                                    {{ form.manufacturer }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- الصلاحية -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    {{ form.has_expiry }}
+                                    <label for="{{ form.has_expiry.id_for_label }}" class="form-check-label fw-bold">
+                                        {{ form.has_expiry.label }}
+                                    </label>
+                                </div>
+                                <div class="mb-3" id="expiry_date_div" style="display: none;">
+                                    <label for="{{ form.expiry_date.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-calendar-times text-danger"></i> {{ form.expiry_date.label }}
+                                    </label>
+                                    {{ form.expiry_date }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    {{ form.is_active }}
+                                    <label for="{{ form.is_active.id_for_label }}" class="form-check-label fw-bold">
+                                        {{ form.is_active.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- الصورة والملاحظات -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.image.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-image text-info"></i> {{ form.image.label }}
+                                    </label>
+                                    {{ form.image }}
+                                    {% if form.instance.image %}
+                                        <div class="mt-2">
+                                            <img src="{{ form.instance.image.url }}" alt="صورة المنتج" class="image-preview">
+                                            <br><small class="text-muted">الصورة الحالية</small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-sticky-note text-secondary"></i> {{ form.notes.label }}
+                                    </label>
+                                    {{ form.notes }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-lightbulb"></i> <strong>نصائح:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>الباركود يمكن مسحه مباشرة من الماسح الضوئي في شاشة البيع</li>
+                                <li>الحد الأدنى للتنبيه يساعدك في معرفة المنتجات التي تحتاج لإعادة طلب</li>
+                                <li>الحقول الإضافية (الوزن، الطول، اللون، الشركة المصنعة) خاصة بمواد البناء</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary-custom"><i class="fas fa-save"></i> {{ button_text }}</button>
+                            <a href="{% url 'products:product_list' %}" class="btn btn-secondary"><i class="fas fa-times"></i> إلغاء</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // إظهار/إخفاء حقل تاريخ الانتهاء
+        const hasExpiryCheckbox = document.getElementById('{{ form.has_expiry.id_for_label }}');
+        const expiryDiv = document.getElementById('expiry_date_div');
+        function toggleExpiry() {
+            if (hasExpiryCheckbox && hasExpiryCheckbox.checked) expiryDiv.style.display = 'block';
+            else if (expiryDiv) expiryDiv.style.display = 'none';
+        }
+        if (hasExpiryCheckbox) {
+            hasExpiryCheckbox.addEventListener('change', toggleExpiry);
+            toggleExpiry();
+        }
+
+        // إضافة كلاس form-control لجميع الحقول
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            if (!input.classList.contains('form-check-input') && input.type !== 'checkbox' && input.type !== 'file') {
+                input.classList.add('form-control');
+            }
+        });
+    });
+</script>
+{% endblock %}

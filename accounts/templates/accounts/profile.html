@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}الملف الشخصي - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-user-circle text-primary"></i>
+                    الملف الشخصي
+                </h2>
+                <div>
+                    <a href="{% url 'accounts:profile_edit' %}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> تعديل الملف
+                    </a>
+                    <a href="{% url 'accounts:change_password' %}" class="btn btn-info">
+                        <i class="fas fa-key"></i> تغيير كلمة السر
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card card-custom text-center">
+                        <div class="card-body">
+                            <i class="fas fa-user-circle fa-5x text-primary mb-3"></i>
+                            <h4>{{ user.username }}</h4>
+                            <p class="text-muted">
+                                {% if user.is_superuser %}
+                                    <span class="badge bg-danger">مدير النظام</span>
+                                {% elif user.is_staff %}
+                                    <span class="badge bg-warning text-dark">موظف</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">مستخدم</span>
+                                {% endif %}
+                            </p>
+                            <p>
+                                <i class="fas fa-calendar-alt"></i>
+                                تاريخ الانضمام: {{ user.date_joined|date:"Y-m-d" }}
+                            </p>
+                            <p>
+                                <i class="fas fa-clock"></i>
+                                آخر دخول: {{ user.last_login|date:"Y-m-d H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="card card-custom">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle text-info"></i>
+                                المعلومات الشخصية
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th style="width: 30%">اسم المستخدم:</th>
+                                    <td>{{ user.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>الاسم الأول:</th>
+                                    <td>{{ user.first_name|default:"—" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>الاسم الأخير:</th>
+                                    <td>{{ user.last_name|default:"—" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>البريد الإلكتروني:</th>
+                                    <td>{{ user.email|default:"—" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>نشط:</th>
+                                    <td>
+                                        {% if user.is_active %}
+                                            <span class="badge bg-success">نعم</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">لا</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-borderless tr {
+        border-bottom: 1px solid #eee;
+    }
+    .table-borderless tr:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}

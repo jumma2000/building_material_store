@@ -1,0 +1,138 @@
+{% load static %}
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <i class="fas fa-tools fa-2x text-white mb-2"></i>
+        <h4>القائمة الرئيسية</h4>
+        <p>نظام إدارة متكامل</p>
+    </div>
+    
+    <ul class="nav nav-pills flex-column">
+        <!-- الرئيسية -->
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
+               href="{% url 'home' %}">
+                <i class="fas fa-home"></i> الرئيسية
+            </a>
+        </li>
+        
+        <!-- العملاء -->
+        <li class="nav-item">
+            <a class="nav-link {% if 'customers' in request.path %}active{% endif %}" 
+               href="{% url 'customers:customer_list' %}">
+                <i class="fas fa-users"></i> العملاء
+            </a>
+        </li>
+        
+        <!-- الموردين -->
+        <li class="nav-item">
+            <a class="nav-link {% if 'suppliers' in request.path %}active{% endif %}" 
+               href="{% url 'suppliers:supplier_list' %}">
+                <i class="fas fa-truck"></i> الموردين
+            </a>
+        </li>
+        
+        <!-- المنتجات -->
+        <li class="nav-item">
+            <a class="nav-link {% if 'products' in request.path %}active{% endif %}" 
+               href="{% url 'products:product_list' %}">
+                <i class="fas fa-boxes"></i> المنتجات
+            </a>
+        </li>
+        
+        <!-- المخازن -->
+        <li class="nav-item">
+            <a class="nav-link {% if 'warehouses' in request.path %}active{% endif %}" 
+               href="{% url 'warehouses:warehouse_list' %}">
+                <i class="fas fa-warehouse"></i> المخازن
+            </a>
+        </li>
+        
+        <hr class="text-white-50 mx-3">
+        
+        <!-- المشتريات -->
+        <li class="nav-item">
+            <a class="nav-link {% if 'purchases' in request.path %}active{% endif %}" 
+               href="{% url 'purchases:purchase_list' %}">
+                <i class="fas fa-shopping-cart"></i> المشتريات
+            </a>
+        </li>
+        
+        <!-- فواتير البيع -->
+        <li class="nav-item">
+            <a class="nav-link {% if 'sales' in request.path and 'pos' not in request.path %}active{% endif %}" 
+               href="{% url 'sales:sale_list' %}">
+                <i class="fas fa-file-invoice"></i> فواتير البيع
+            </a>
+        </li>
+        
+        <!-- نقطة البيع POS -->
+        <li class="nav-item">
+            <a class="nav-link {% if 'sale_add' in request.path %}active{% endif %}" 
+               href="{% url 'sales:sale_add' %}">
+                <i class="fas fa-cash-register"></i> نقطة البيع POS
+            </a>
+        </li>
+        
+        <hr class="text-white-50 mx-3">
+        
+        <!-- التقارير (قائمة منسدلة) -->
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle {% if 'reports' in request.path %}active{% endif %}" 
+               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-chart-bar"></i> التقارير
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <a class="dropdown-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
+                       href="{% url 'reports:dashboard' %}">
+                        <i class="fas fa-chart-line"></i> لوحة التحكم
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item {% if request.resolver_match.url_name == 'sales_report' %}active{% endif %}" 
+                       href="{% url 'reports:sales_report' %}">
+                        <i class="fas fa-chart-line"></i> تقرير المبيعات
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item {% if request.resolver_match.url_name == 'inventory_report' %}active{% endif %}" 
+                       href="{% url 'reports:inventory_report' %}">
+                        <i class="fas fa-boxes"></i> تقرير المخزون
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item {% if request.resolver_match.url_name == 'purchases_report' %}active{% endif %}" 
+                       href="{% url 'reports:purchases_report' %}">
+                        <i class="fas fa-chart-line"></i> تقرير المشتريات
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item {% if request.resolver_match.url_name == 'profits_report' %}active{% endif %}" 
+                       href="{% url 'reports:profits_report' %}">
+                        <i class="fas fa-chart-pie"></i> تقرير الأرباح
+                    </a>
+                </li>
+            </ul>
+        </li>
+        
+        <hr class="text-white-50 mx-3">
+        
+        <!-- لوحة التحكم الإدارية -->
+        <li class="nav-item">
+            <a class="nav-link" href="/admin/">
+                <i class="fas fa-tachometer-alt"></i> لوحة التحكم (أدمن)
+            </a>
+        </li>
+        
+        <!-- تسجيل الخروج -->
+        <li class="nav-item mt-4">
+            <form method="POST" action="{% url 'accounts:logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="nav-link text-danger" style="background: none; border: none; width: 100%; text-align: right; cursor: pointer;">
+                    <i class="fas fa-sign-out-alt"></i> تسجيل خروج
+                </button>
+            </form>
+        </li>
+    </ul>
+</div>

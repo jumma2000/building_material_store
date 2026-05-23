@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}حذف فاتورة بيع - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card card-custom mt-5">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        تأكيد حذف الفاتورة
+                    </h5>
+                </div>
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-file-invoice fa-5x text-danger mb-4"></i>
+                    <h4 class="mb-3">هل أنت متأكد من حذف هذه الفاتورة؟</h4>
+                    
+                    <div class="alert alert-warning">
+                        <div class="row">
+                            <div class="col-md-6 text-md-end"><strong>رقم الفاتورة:</strong></div>
+                            <div class="col-md-6 text-md-start">{{ invoice.invoice_number }}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6 text-md-end"><strong>التاريخ:</strong></div>
+                            <div class="col-md-6 text-md-start">{{ invoice.invoice_date|date:"Y-m-d H:i" }}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6 text-md-end"><strong>العميل:</strong></div>
+                            <div class="col-md-6 text-md-start">{{ invoice.customer.name|default:"زائر" }}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6 text-md-end"><strong>الإجمالي:</strong></div>
+                            <div class="col-md-6 text-md-start">{{ invoice.total|floatformat:2 }} د.ل</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6 text-md-end"><strong>عدد المنتجات:</strong></div>
+                            <div class="col-md-6 text-md-start">{{ invoice.details.count }} منتج</div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <i class="fas fa-ban"></i> <strong>تنبيه!</strong> هذا الإجراء لا يمكن التراجع عنه.
+                        <br><i class="fas fa-chart-line"></i> سيتم حذف جميع تفاصيل الفاتورة وستزداد الكميات في المخزون.
+                    </div>
+                    
+                    <div class="alert alert-light">
+                        <strong><i class="fas fa-list"></i> المنتجات في هذه الفاتورة:</strong>
+                        <ul class="mt-2 mb-0 text-start">
+                            {% for detail in invoice.details.all %}
+                                <li>{{ detail.product.name }} - {{ detail.quantity }} {{ detail.product.get_unit_display }} - {{ detail.total|floatformat:2 }} د.ل</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-center gap-3 mt-4">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-trash"></i> نعم، احذف الفاتورة
+                            </button>
+                            <a href="{% url 'sales:sale_detail' invoice.pk %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times"></i> إلغاء
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

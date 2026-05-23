@@ -1,0 +1,33 @@
+{% load static %}
+
+<nav class="navbar navbar-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <i class="fas fa-tools"></i>
+            نظام إدارة متجر مواد البناء
+        </a>
+        
+        <div class="d-flex align-items-center">
+            <div class="dropdown">
+                <a href="#" class="dropdown-toggle text-decoration-none user-dropdown" data-bs-toggle="dropdown">
+                    <i class="fas fa-user-circle"></i>
+                    <span>مرحباً، {{ request.user.first_name|default:request.user.username }}</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="fas fa-user"></i> الملف الشخصي</a></li>
+                    <li><a class="dropdown-item" href="{% url 'accounts:profile_edit' %}"><i class="fas fa-edit"></i> تعديل الملف</a></li>
+                    <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="fas fa-key"></i> تغيير كلمة السر</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form method="POST" action="{% url 'accounts:logout' %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item text-danger" style="background: none; border: none; width: 100%; text-align: right; cursor: pointer;">
+                                <i class="fas fa-sign-out-alt"></i> تسجيل خروج
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>

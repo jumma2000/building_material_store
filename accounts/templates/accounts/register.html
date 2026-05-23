@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}إنشاء حساب - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card card-custom mt-5">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-plus text-primary"></i>
+                        إنشاء حساب جديد
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>ملاحظة:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>اسم المستخدم يجب أن يكون فريداً</li>
+                                <li>كلمة السر يجب أن تكون 8 أحرف على الأقل</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-primary-custom">
+                                <i class="fas fa-check"></i> إنشاء حساب
+                            </button>
+                            <a href="{% url 'accounts:login' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-right"></i> لدي حساب بالفعل
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

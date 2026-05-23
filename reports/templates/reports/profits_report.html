@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تقرير الأرباح - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-line text-primary"></i> تقرير الأرباح</h2>
+                <div>
+                    <button onclick="window.print()" class="btn btn-secondary"><i class="fas fa-print"></i> طباعة</button>
+                    <a href="{% url 'reports:dashboard' %}" class="btn btn-primary-custom"><i class="fas fa-chart-line"></i> العودة للوحة</a>
+                </div>
+            </div>
+
+            <!-- بطاقة الفلترة -->
+            <div class="card card-custom mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">من تاريخ</label>
+                            <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">إلى تاريخ</label>
+                            <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary-custom w-100"><i class="fas fa-filter"></i> تطبيق الفلتر</button>
+                        </div>
+                    </form>
+                    {% if start_date or end_date %}
+                    <div class="mt-3"><a href="{% url 'reports:profits_report' %}" class="btn btn-sm btn-secondary"><i class="fas fa-times"></i> إلغاء الفلترة</a></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- بطاقات الأرباح الرئيسية -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-danger text-white"><div class="card-body"><div class="d-flex justify-content-between"><div><h6 class="mb-0">إجمالي المشتريات</h6><h2 class="mb-0">{{ total_purchases|floatformat:2 }} د.ل</h2></div><i class="fas fa-shopping-cart fa-3x opacity-50"></i></div><div class="mt-2"><small><i class="fas fa-file-invoice"></i> {{ purchase_invoices_count }} فاتورة</small></div></div></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white"><div class="card-body"><div class="d-flex justify-content-between"><div><h6 class="mb-0">إجمالي المبيعات</h6><h2 class="mb-0">{{ total_sales|floatformat:2 }} د.ل</h2></div><i class="fas fa-cash-register fa-3x opacity-50"></i></div><div class="mt-2"><small><i class="fas fa-file-invoice"></i> {{ sale_invoices_count }} فاتورة</small></div></div></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-dark"><div class="card-body"><div class="d-flex justify-content-between"><div><h6 class="mb-0">إجمالي الأرباح</h6><h2 class="mb-0">{{ total_profit|floatformat:2 }} د.ل</h2></div><i class="fas fa-chart-line fa-3x opacity-50"></i></div><div class="mt-2"><small><i class="fas fa-percent"></i> هامش الربح: {{ profit_margin|floatformat:1 }}%</small></div></div></div>
+                </div>
+            </div>
+
+            <!-- ملخص بياني بسيط -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card card-custom">
+                        <div class="card-header bg-white"><h5 class="mb-0"><i class="fas fa-chart-pie text-primary"></i> ملخص الأرباح</h5></div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4 mb-3"><div class="bg-light rounded-circle p-4 d-inline-block"><i class="fas fa-shopping-cart fa-3x text-danger"></i></div><h5 class="mt-2">المشتريات</h5><h4 class="text-danger">{{ total_purchases|floatformat:2 }} د.ل</h4></div>
+                                <div class="col-md-4 mb-3"><div class="bg-light rounded-circle p-4 d-inline-block"><i class="fas fa-arrow-right fa-3x text-secondary"></i></div><h5 class="mt-2">نسبة الربح</h5><h4 class="text-warning">{{ profit_margin|floatformat:1 }}%</h4></div>
+                                <div class="col-md-4 mb-3"><div class="bg-light rounded-circle p-4 d-inline-block"><i class="fas fa-cash-register fa-3x text-success"></i></div><h5 class="mt-2">المبيعات</h5><h4 class="text-success">{{ total_sales|floatformat:2 }} د.ل</h4></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- جدول المقارنة -->
+            <div class="card card-custom">
+                <div class="card-header bg-white"><h5 class="mb-0"><i class="fas fa-calendar-alt text-primary"></i> ملخص الفترة المحددة</h5></div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered mb-0">
+                            <thead class="table-light"><tr><th>البيان</th><th>المشتريات</th><th>المبيعات</th><th>الأرباح</th></tr></thead>
+                            <tbody>
+                                <tr><td class="fw-bold">الإجمالي</td><td class="text-danger">{{ total_purchases|floatformat:2 }} د.ل</td><td class="text-success">{{ total_sales|floatformat:2 }} د.ل</td><td class="text-warning fw-bold">{{ total_profit|floatformat:2 }} د.ل</td></tr>
+                                <tr><td class="fw-bold">عدد الفواتير</td><td>{{ purchase_invoices_count }} فاتورة</td><td>{{ sale_invoices_count }} فاتورة</td><td>-</td></tr>
+                                {% if sale_invoices_count > 0 %}
+                                <tr><td class="fw-bold">متوسط الفاتورة</td><td>{{ total_purchases|floatformat:2|add:purchase_invoices_count|floatformat:2 }} د.ل</td><td>{{ total_sales|floatformat:2|add:sale_invoices_count|floatformat:2 }} د.ل</td><td class="text-success">{{ total_profit|floatformat:2|add:sale_invoices_count|floatformat:2 }} د.ل</td></tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- نصائح وتحليل -->
+            <div class="card card-custom mt-4 bg-light">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <i class="fas fa-lightbulb text-warning"></i> <strong>نصائح لزيادة الأرباح:</strong>
+                            <ul class="text-muted small mt-2">
+                                <li>راجع المنتجات الأكثر مبيعاً وعزز مخزونها</li>
+                                <li>تابع المنتجات منخفضة المخزون لتجنب نفادها</li>
+                                <li>قدم عروضاً على المنتجات الأقل مبيعاً</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <i class="fas fa-chart-line text-success"></i> <strong>تحليل الأداء:</strong>
+                            <ul class="text-muted small mt-2">
+                                <li>هامش الربح الحالي: <strong class="text-success">{{ profit_margin|floatformat:1 }}%</strong></li>
+                                <li>متوسط قيمة الفاتورة: <strong class="text-primary">{{ total_sales|floatformat:2|add:sale_invoices_count|floatformat:2 }} د.ل</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

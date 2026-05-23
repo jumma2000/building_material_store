@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تفاصيل المنتج - {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-boxes text-primary"></i>
+                    تفاصيل المنتج: {{ product.name }}
+                </h2>
+                <div>
+                    <a href="{% url 'products:product_edit' product.pk %}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> تعديل
+                    </a>
+                    <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> حذف
+                    </a>
+                    <a href="{% url 'products:product_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right"></i> العودة
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card card-custom mb-4">
+                        <div class="card-body text-center">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" 
+                                     style="max-width: 100%; max-height: 250px; object-fit: cover; border-radius: 10px;">
+                            {% else %}
+                                <i class="fas fa-box fa-5x text-muted"></i>
+                                <p class="text-muted mt-2">لا توجد صورة للمنتج</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card card-custom mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-info-circle text-info"></i> حالة المنتج</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr><th>الحالة:</th><td>
+                                    {% if product.is_active %}<span class="badge bg-success">مفعل</span>
+                                    {% else %}<span class="badge bg-secondary">غير مفعل</span>{% endif %}
+                                 </td> </tr>
+                                <tr><th>المخزون:</th><td>
+                                    {% if product.current_quantity == 0 %}<span class="badge bg-danger">نفذ</span>
+                                    {% elif product.is_low_stock %}<span class="badge bg-warning text-dark">مخزون منخفض</span>
+                                    {% else %}<span class="badge bg-success">متوفر</span>{% endif %}
+                                 </td> </tr>
+                                <tr><th>تاريخ الإضافة:</th><td>{{ product.created_at|date:"Y-m-d H:i" }}</td> </tr>
+                                <tr><th>آخر تحديث:</th><td>{{ product.updated_at|date:"Y-m-d H:i" }}</td> </tr>
+                                <tr><th>له صلاحية:</th><td>{{ product.has_expiry|yesno:"نعم,لا" }}</td> </tr>
+                                {% if product.has_expiry and product.expiry_date %}
+                                <tr><th>تاريخ الانتهاء:</th><td>
+                                    {% if product.expiry_date < now %}<span class="text-danger">{{ product.expiry_date|date:"Y-m-d" }} (منتهي)</span>
+                                    {% else %}<span class="text-warning">{{ product.expiry_date|date:"Y-m-d" }}</span>{% endif %}
+                                 </td> </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="card card-custom mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-tag text-primary"></i> معلومات المنتج</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr><th>اسم المنتج:</th><td>{{ product.name }}</td> </tr>
+                                        <tr><th>الباركود:</th><td>{{ product.barcode|default:"—" }}</td> </tr>
+                                        <tr><th>التصنيف:</th><td>{{ product.category.name }}</td> </tr>
+                                        <tr><th>المخزن:</th><td>{{ product.warehouse.name }}</td> </tr>
+                                        <tr><th>وحدة القياس:</th><td>{{ product.get_unit_display }}</td> </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr><th>سعر الشراء:</th><td class="text-primary">{{ product.purchase_price }} د.ل</td> </tr>
+                                        <tr><th>سعر البيع:</th><td class="text-success fw-bold">{{ product.sale_price }} د.ل</td> </tr>
+                                        <tr><th>الكمية الحالية:</th>
+                                            <td class="{% if product.current_quantity <= product.min_quantity %}text-danger fw-bold{% else %}text-success{% endif %}">
+                                                {{ product.current_quantity }} {{ product.get_unit_display }}
+                                            </td> </tr>
+                                        <tr><th>الحد الأدنى:</th><td>{{ product.min_quantity }} {{ product.get_unit_display }}</td> </tr>
+                                        <tr><th>هامش الربح:</th><td class="text-info">{{ product.get_profit_margin|floatformat:1 }}%</td> </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- خصائص إضافية لمواد البناء -->
+                    {% if product.weight_kg or product.length_m or product.color or product.manufacturer %}
+                    <div class="card card-custom mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-hard-hat text-secondary"></i> خصائص إضافية</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% if product.weight_kg %}
+                                <div class="col-md-3"><strong>الوزن:</strong> {{ product.weight_kg }} كجم</div>
+                                {% endif %}
+                                {% if product.length_m %}
+                                <div class="col-md-3"><strong>الطول:</strong> {{ product.length_m }} متر</div>
+                                {% endif %}
+                                {% if product.color %}
+                                <div class="col-md-3"><strong>اللون:</strong> {{ product.color }}</div>
+                                {% endif %}
+                                {% if product.manufacturer %}
+                                <div class="col-md-3"><strong>الشركة المصنعة:</strong> {{ product.manufacturer }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- حركة المخزون -->
+                    <div class="card card-custom">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-history text-primary"></i> آخر حركات المخزون</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>التاريخ</th>
+                                            <th>نوع الحركة</th>
+                                            <th>الكمية</th>
+                                            <th>السعر</th>
+                                            <th>المرجع</th>
+                                         </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for movement in product.movements.all|slice:":10" %}
+                                        <tr>
+                                            <td>{{ movement.created_at|date:"Y-m-d H:i" }}</td>
+                                            <td>
+                                                {% if movement.movement_type == 'in' %}<span class="badge bg-success">داخل (شراء)</span>
+                                                {% elif movement.movement_type == 'out' %}<span class="badge bg-danger">خارج (بيع)</span>
+                                                {% elif movement.movement_type == 'return_in' %}<span class="badge bg-info">مرتجع داخل</span>
+                                                {% else %}<span class="badge bg-warning">مرتجع خارج</span>{% endif %}
+                                             </td>
+                                            <td>{{ movement.quantity }} {{ product.get_unit_display }}</td>
+                                            <td>{{ movement.price_at_movement }} د.ل</td>
+                                            <td>{{ movement.reference_type|default:"—" }} #{{ movement.reference_id|default:"—" }}</td>
+                                         </tr>
+                                        {% empty %}
+                                        <tr><td colspan="5" class="text-center text-muted py-5">لا توجد حركات مخزون</td> </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

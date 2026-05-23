@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تقرير المخزون - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-bar text-primary"></i> تقرير المخزون</h2>
+                <div>
+                    <button onclick="window.print()" class="btn btn-secondary"><i class="fas fa-print"></i> طباعة</button>
+                    <a href="{% url 'reports:dashboard' %}" class="btn btn-primary-custom"><i class="fas fa-chart-line"></i> العودة للوحة</a>
+                </div>
+            </div>
+
+            <!-- بطاقة الفلترة -->
+            <div class="card card-custom mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">التصنيف</label>
+                            <select name="category" class="form-select">
+                                <option value="">جميع التصنيفات</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">المخزن</label>
+                            <select name="warehouse" class="form-select">
+                                <option value="">جميع المخازن</option>
+                                {% for wh in warehouses %}
+                                    <option value="{{ wh.id }}" {% if selected_warehouse == wh.id|stringformat:"s" %}selected{% endif %}>{{ wh.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">حالة المخزون</label>
+                            <select name="stock_status" class="form-select">
+                                <option value="">الكل</option>
+                                <option value="low" {% if selected_status == 'low' %}selected{% endif %}>مخزون منخفض</option>
+                                <option value="out" {% if selected_status == 'out' %}selected{% endif %}>نفذ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">بحث</label>
+                            <input type="text" name="search" class="form-control" placeholder="اسم المنتج أو الباركود..." value="{{ search }}">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary-custom w-100"><i class="fas fa-search"></i></button>
+                        </div>
+                    </form>
+                    {% if search or selected_category or selected_warehouse or selected_status %}
+                    <div class="mt-3"><a href="{% url 'reports:inventory_report' %}" class="btn btn-sm btn-secondary"><i class="fas fa-times"></i> إلغاء الفلترة</a></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- بطاقات الإحصائيات -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white"><div class="card-body"><div class="d-flex justify-content-between"><div><h6 class="mb-0">إجمالي المنتجات</h6><h3 class="mb-0">{{ products.paginator.count }}</h3></div><i class="fas fa-boxes fa-3x opacity-50"></i></div></div></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white"><div class="card-body"><div class="d-flex justify-content-between"><div><h6 class="mb-0">إجمالي الكميات</h6><h3 class="mb-0">{{ total_quantity|floatformat:0 }}</h3></div><i class="fas fa-cubes fa-3x opacity-50"></i></div></div></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-dark"><div class="card-body"><div class="d-flex justify-content-between"><div><h6 class="mb-0">القيمة الإجمالية</h6><h3 class="mb-0">{{ total_value|floatformat:2 }} د.ل</h3></div><i class="fas fa-money-bill fa-3x opacity-50"></i></div></div></div>
+                </div>
+            </div>
+
+            <!-- جدول المنتجات -->
+            <div class="card card-custom">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover mb-0">
+                            <thead><tr><th>#</th><th>المنتج</th><th>الباركود</th><th>التصنيف</th><th>المخزن</th><th>سعر الشراء</th><th>سعر البيع</th><th>الكمية</th><th>القيمة</th><th>الحالة</th></tr></thead>
+                            <tbody>
+                                {% if products %}
+                                    {% for product in products %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td class="fw-bold">{{ product.name }}</td>
+                                        <td>{{ product.barcode|default:"—" }}</td>
+                                        <td>{{ product.category.name }}</td>
+                                        <td>{{ product.warehouse.name }}</td>
+                                        <td>{{ product.purchase_price }} د.ل</td>
+                                        <td class="text-success fw-bold">{{ product.sale_price }} د.ل</td>
+                                        <td class="{% if product.current_quantity <= product.min_quantity %}text-danger fw-bold{% else %}text-success{% endif %}">{{ product.current_quantity }} {{ product.get_unit_display }}</td>
+                                        <td>{{ product.current_quantity|floatformat:0|add:product.purchase_price|floatformat:2 }} د.ل</td>
+                                        <td>{% if product.current_quantity == 0 %}<span class="badge bg-danger">نفذ</span>{% elif product.is_low_stock %}<span class="badge bg-warning text-dark">مخزون منخفض</span>{% else %}<span class="badge bg-success">متوفر</span>{% endif %}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr><td colspan="10" class="text-center py-5">لا توجد منتجات</td></tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% if is_paginated %}
+                <div class="card-footer bg-white">
+                    <nav><ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_warehouse %}&warehouse={{ selected_warehouse }}{% endif %}{% if selected_status %}&stock_status={{ selected_status }}{% endif %}"><i class="fas fa-chevron-right"></i></a></li>{% else %}<li class="page-item disabled"><a class="page-link" href="#"><i class="fas fa-chevron-right"></i></a></li>{% endif %}
+                        {% for num in page_obj.paginator.page_range %}{% if page_obj.number == num %}<li class="page-item active"><span class="page-link">{{ num }}</span></li>{% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}<li class="page-item"><a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_warehouse %}&warehouse={{ selected_warehouse }}{% endif %}{% if selected_status %}&stock_status={{ selected_status }}{% endif %}">{{ num }}</a></li>{% endif %}{% endfor %}
+                        {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_warehouse %}&warehouse={{ selected_warehouse }}{% endif %}{% if selected_status %}&stock_status={{ selected_status }}{% endif %}"><i class="fas fa-chevron-left"></i></a></li>{% else %}<li class="page-item disabled"><a class="page-link" href="#"><i class="fas fa-chevron-left"></i></a></li>{% endif %}
+                    </ul></nav>
+                    <div class="text-center text-muted mt-2">عرض {{ page_obj.start_index }} - {{ page_obj.end_index }} من أصل {{ page_obj.paginator.count }} منتج</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

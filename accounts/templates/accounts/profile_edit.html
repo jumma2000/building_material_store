@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}تعديل الملف الشخصي - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-user-edit text-primary"></i>
+                    تعديل الملف الشخصي
+                </h2>
+                <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right"></i>
+                    العودة إلى الملف الشخصي
+                </a>
+            </div>
+
+            <div class="card card-custom">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle text-info"></i>
+                        معلومات الحساب
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-user text-primary"></i>
+                                اسم المستخدم
+                            </label>
+                            <input type="text" class="form-control" value="{{ user.username }}" readonly disabled>
+                            <small class="text-muted">لا يمكن تغيير اسم المستخدم</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-user-tag text-info"></i>
+                                {{ form.first_name.label }}
+                            </label>
+                            {{ form.first_name }}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-user-tag text-info"></i>
+                                {{ form.last_name.label }}
+                            </label>
+                            {{ form.last_name }}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.email.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-envelope text-success"></i>
+                                {{ form.email.label }}
+                            </label>
+                            {{ form.email }}
+                            <small class="text-muted">البريد الإلكتروني يستخدم للتواصل</small>
+                        </div>
+
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-lightbulb"></i>
+                            <strong>نصائح:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>يمكنك تغيير كلمة السر من صفحة <strong>"تغيير كلمة السر"</strong></li>
+                                <li>البريد الإلكتروني مهم لاستعادة كلمة السر</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary-custom">
+                                <i class="fas fa-save"></i>
+                                حفظ التغييرات
+                            </button>
+                            <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i>
+                                إلغاء
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var firstNameInput = document.getElementById('{{ form.first_name.id_for_label }}');
+        if (firstNameInput) firstNameInput.classList.add('form-control');
+        
+        var lastNameInput = document.getElementById('{{ form.last_name.id_for_label }}');
+        if (lastNameInput) lastNameInput.classList.add('form-control');
+        
+        var emailInput = document.getElementById('{{ form.email.id_for_label }}');
+        if (emailInput) emailInput.classList.add('form-control');
+    });
+</script>
+{% endblock %}

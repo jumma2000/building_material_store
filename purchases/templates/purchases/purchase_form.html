@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-row {
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+    }
+    .remove-row {
+        margin-top: 30px;
+    }
+    .product-select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-shopping-cart text-primary"></i>
+                    {{ title }}
+                </h2>
+                <a href="{% url 'purchases:purchase_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right"></i> العودة إلى القائمة
+                </a>
+            </div>
+
+            <div class="card card-custom">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle text-info"></i> معلومات الفاتورة</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="purchaseForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.invoice_number.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-hashtag text-danger"></i> {{ form.invoice_number.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.invoice_number }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.invoice_date.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-calendar text-info"></i> {{ form.invoice_date.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.invoice_date }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.supplier.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-truck text-warning"></i> {{ form.supplier.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.supplier }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.warehouse.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-warehouse text-primary"></i> {{ form.warehouse.label }}
+                                    </label>
+                                    {{ form.warehouse }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.supplier_invoice_date.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-calendar-alt text-secondary"></i> {{ form.supplier_invoice_date.label }}
+                                    </label>
+                                    {{ form.supplier_invoice_date }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.supplier_bill_number.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-receipt text-success"></i> {{ form.supplier_bill_number.label }}
+                                    </label>
+                                    {{ form.supplier_bill_number }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.statement.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-align-left text-secondary"></i> {{ form.statement.label }}
+                                    </label>
+                                    {{ form.statement }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.reference_number.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-link text-info"></i> {{ form.reference_number.label }}
+                                    </label>
+                                    {{ form.reference_number }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-sticky-note text-secondary"></i> {{ form.notes.label }}
+                            </label>
+                            {{ form.notes }}
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- تفاصيل الفاتورة -->
+                        <h5 class="mb-3"><i class="fas fa-list-ul text-primary"></i> تفاصيل الفاتورة (المنتجات)</h5>
+
+                        <div id="products-container">
+                            {% if details %}
+                                {% for detail in details %}
+                                <div class="product-row">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-bold">المنتج</label>
+                                            <select name="product_id[]" class="product-select" required>
+                                                <option value="">-- اختر المنتج --</option>
+                                                {% for product in products %}
+                                                    <option value="{{ product.id }}" 
+                                                            data-price="{{ product.purchase_price }}"
+                                                            data-sale="{{ product.sale_price }}"
+                                                            {% if detail.product.id == product.id %}selected{% endif %}>
+                                                        {{ product.name }} ({{ product.get_unit_display }}) - {{ product.purchase_price }} د.ل
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label fw-bold">الكمية</label>
+                                            <input type="number" name="quantity[]" class="form-control quantity" value="{{ detail.quantity }}" step="0.01" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label fw-bold">سعر الشراء</label>
+                                            <input type="number" name="purchase_price[]" class="form-control purchase-price" value="{{ detail.purchase_price }}" step="0.01">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label fw-bold">سعر البيع</label>
+                                            <input type="number" name="sale_price[]" class="form-control sale-price" value="{{ detail.sale_price }}" step="0.01">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label fw-bold">تاريخ الانتهاء</label>
+                                            <input type="date" name="expiry_date[]" class="form-control" value="{{ detail.expiry_date|date:'Y-m-d' }}">
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="form-label fw-bold">الخصم</label>
+                                            <input type="number" name="discount[]" class="form-control discount" value="{{ detail.discount }}" step="0.01">
+                                        </div>
+                                        <div class="col-md-auto remove-row">
+                                            <button type="button" class="btn btn-danger remove-product"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="product-row">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-bold">المنتج</label>
+                                            <select name="product_id[]" class="product-select" required>
+                                                <option value="">-- اختر المنتج --</option>
+                                                {% for product in products %}
+                                                    <option value="{{ product.id }}" 
+                                                            data-price="{{ product.purchase_price }}"
+                                                            data-sale="{{ product.sale_price }}">
+                                                        {{ product.name }} ({{ product.get_unit_display }}) - {{ product.purchase_price }} د.ل
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label fw-bold">الكمية</label>
+                                            <input type="number" name="quantity[]" class="form-control quantity" step="0.01" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label fw-bold">سعر الشراء</label>
+                                            <input type="number" name="purchase_price[]" class="form-control purchase-price" step="0.01">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label fw-bold">سعر البيع</label>
+                                            <input type="number" name="sale_price[]" class="form-control sale-price" step="0.01">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label fw-bold">تاريخ الانتهاء</label>
+                                            <input type="date" name="expiry_date[]" class="form-control">
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="form-label fw-bold">الخصم</label>
+                                            <input type="number" name="discount[]" class="form-control discount" step="0.01">
+                                        </div>
+                                        <div class="col-md-auto remove-row">
+                                            <button type="button" class="btn btn-danger remove-product"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mt-3">
+                            <button type="button" id="add-product" class="btn btn-success">
+                                <i class="fas fa-plus"></i> إضافة منتج
+                            </button>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary-custom"><i class="fas fa-save"></i> {{ button_text }}</button>
+                            <a href="{% url 'purchases:purchase_list' %}" class="btn btn-secondary"><i class="fas fa-times"></i> إلغاء</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // إضافة كلاس form-control لجميع الحقول
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            if (input.type !== 'checkbox' && input.type !== 'file') {
+                input.classList.add('form-control');
+            }
+        });
+
+        function setupProductSelect(select) {
+            select.addEventListener('change', function() {
+                const row = this.closest('.product-row');
+                const selectedOption = this.options[this.selectedIndex];
+                const purchasePrice = selectedOption.getAttribute('data-price');
+                const salePrice = selectedOption.getAttribute('data-sale');
+                const purchaseInput = row.querySelector('.purchase-price');
+                const saleInput = row.querySelector('.sale-price');
+                if (purchasePrice && !purchaseInput.value) purchaseInput.value = purchasePrice;
+                if (salePrice && !saleInput.value) saleInput.value = salePrice;
+            });
+        }
+
+        document.querySelectorAll('.product-select').forEach(select => setupProductSelect(select));
+
+        document.getElementById('add-product').addEventListener('click', function() {
+            const container = document.getElementById('products-container');
+            const newRow = document.querySelector('.product-row').cloneNode(true);
+            newRow.querySelectorAll('input').forEach(input => { if (input.type !== 'button') input.value = ''; });
+            const select = newRow.querySelector('.product-select');
+            select.value = '';
+            setupProductSelect(select);
+            container.appendChild(newRow);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-product') || e.target.parentElement?.classList?.contains('remove-product')) {
+                const btn = e.target.classList.contains('remove-product') ? e.target : e.target.parentElement;
+                const row = btn.closest('.product-row');
+                if (document.querySelectorAll('.product-row').length > 1) row.remove();
+                else alert('لا يمكن حذف الصف الأخير');
+            }
+        });
+    });
+</script>
+{% endblock %}

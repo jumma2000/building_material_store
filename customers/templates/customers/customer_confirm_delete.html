@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}حذف عميل - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card card-custom mt-5">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        تأكيد حذف العميل
+                    </h5>
+                </div>
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-user-times fa-5x text-danger mb-4"></i>
+                    <h4 class="mb-3">هل أنت متأكد من حذف هذا العميل؟</h4>
+                    
+                    <div class="alert alert-warning">
+                        <div class="row">
+                            <div class="col-md-6 text-md-end"><strong>اسم العميل:</strong></div>
+                            <div class="col-md-6 text-md-start">{{ customer.name }}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6 text-md-end"><strong>رقم الهاتف:</strong></div>
+                            <div class="col-md-6 text-md-start">{{ customer.phone }}</div>
+                        </div>
+                        {% if customer.email %}
+                        <div class="row mt-2">
+                            <div class="col-md-6 text-md-end"><strong>البريد الإلكتروني:</strong></div>
+                            <div class="col-md-6 text-md-start">{{ customer.email }}</div>
+                        </div>
+                        {% endif %}
+                        <div class="row mt-2">
+                            <div class="col-md-6 text-md-end"><strong>نوع العميل:</strong></div>
+                            <div class="col-md-6 text-md-start">
+                                {% if customer.customer_type == 'individual' %}فرد
+                                {% elif customer.customer_type == 'company' %}شركة مقاولات
+                                {% else %}متجر{% endif %}
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6 text-md-end"><strong>عدد الفواتير:</strong></div>
+                            <div class="col-md-6 text-md-start">{{ customer.invoices.count }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <i class="fas fa-ban"></i> <strong>تنبيه!</strong> هذا الإجراء لا يمكن التراجع عنه.
+                        {% if customer.invoices.count > 0 %}
+                        <br><i class="fas fa-file-invoice"></i> هذا العميل لديه {{ customer.invoices.count }} فاتورة مرتبطة به.
+                        {% endif %}
+                    </div>
+                    
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-center gap-3 mt-4">
+                            {% if customer.invoices.count == 0 %}
+                                <button type="submit" class="btn btn-danger btn-lg">
+                                    <i class="fas fa-trash"></i> نعم، احذف العميل
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn btn-secondary btn-lg" disabled>
+                                    <i class="fas fa-ban"></i> لا يمكن الحذف (يوجد فواتير)
+                                </button>
+                            {% endif %}
+                            <a href="{% url 'customers:customer_detail' customer.pk %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times"></i> إلغاء
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

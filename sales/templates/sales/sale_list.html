@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}فواتير البيع - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-file-invoice text-primary"></i>
+                    فواتير البيع
+                </h2>
+                <a href="{% url 'sales:sale_add' %}" class="btn btn-primary-custom">
+                    <i class="fas fa-plus"></i>
+                    فاتورة بيع جديدة
+                </a>
+            </div>
+
+            <!-- بطاقة البحث -->
+            <div class="card card-custom mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-10">
+                            <div class="input-group">
+                                <input type="text" 
+                                       name="search" 
+                                       class="form-control form-control-lg" 
+                                       placeholder="ابحث برقم الفاتورة، اسم العميل، أو رقم الهاتف..."
+                                       value="{{ search }}">
+                                <button class="btn btn-primary-custom" type="submit">
+                                    <i class="fas fa-search"></i> بحث
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            {% if search %}
+                                <a href="{% url 'sales:sale_list' %}" class="btn btn-secondary btn-lg w-100">
+                                    <i class="fas fa-times"></i> إلغاء
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- بطاقة إحصائيات سريعة -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">إجمالي الفواتير</h6>
+                                    <h2 class="mb-0">{{ invoices.paginator.count }}</h2>
+                                </div>
+                                <i class="fas fa-file-invoice fa-3x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">إجمالي المبيعات</h6>
+                                    <h2 class="mb-0" id="totalSales">0 د.ل</h2>
+                                </div>
+                                <i class="fas fa-money-bill fa-3x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">متوسط الفاتورة</h6>
+                                    <h2 class="mb-0" id="avgSale">0 د.ل</h2>
+                                </div>
+                                <i class="fas fa-chart-line fa-3x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- جدول الفواتير -->
+            <div class="card card-custom">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>رقم الفاتورة</th>
+                                    <th>التاريخ</th>
+                                    <th>العميل</th>
+                                    <th>طريقة الدفع</th>
+                                    <th>الإجمالي</th>
+                                    <th>الحالة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if invoices %}
+                                    {% for invoice in invoices %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td class="fw-bold">
+                                            <a href="{% url 'sales:sale_detail' invoice.pk %}" class="text-decoration-none">
+                                                {{ invoice.invoice_number }}
+                                            </a>
+                                        </a></td>
+                                        <td>{{ invoice.invoice_date|date:"Y-m-d H:i" }}</td>
+                                        <td>{{ invoice.customer.name|default:"زائر" }}</td>
+                                        <td>
+                                            {% if invoice.payment_method == 'cash' %}
+                                                <span class="badge bg-success">نقدي</span>
+                                            {% elif invoice.payment_method == 'card' %}
+                                                <span class="badge bg-info">بطاقة</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">آجل</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-success fw-bold sale-total" data-total="{{ invoice.total }}">
+                                            {{ invoice.total|floatformat:2 }} د.ل
+                                        </td>
+                                        <td>
+                                            {% if invoice.status == 'completed' %}
+                                                <span class="badge bg-success">مكتملة</span>
+                                            {% elif invoice.status == 'cancelled' %}
+                                                <span class="badge bg-danger">ملغاة</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">مرتجعة</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'sales:sale_detail' invoice.pk %}" class="btn btn-sm btn-info" title="عرض">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'sales:sale_delete' invoice.pk %}" class="btn btn-sm btn-danger" title="حذف">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="8" class="text-center py-5">
+                                            <i class="fas fa-file-invoice fa-3x text-muted mb-3 d-block"></i>
+                                            <h5 class="text-muted">لا توجد فواتير بيع</h5>
+                                            <a href="{% url 'sales:sale_add' %}" class="btn btn-primary-custom mt-2">
+                                                <i class="fas fa-plus"></i> أضف أول فاتورة
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- الترقيم -->
+                {% if is_paginated %}
+                <div class="card-footer bg-white">
+                    <nav aria-label="التنقل بين الصفحات">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><a class="page-link" href="#"><i class="fas fa-chevron-right"></i></a></li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><a class="page-link" href="#"><i class="fas fa-chevron-left"></i></a></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    <div class="text-center text-muted mt-2">
+                        عرض {{ page_obj.start_index }} - {{ page_obj.end_index }} من أصل {{ page_obj.paginator.count }} فاتورة
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let totalSales = 0;
+        let count = 0;
+        document.querySelectorAll('.sale-total').forEach(function(el) {
+            let val = parseFloat(el.getAttribute('data-total')) || 0;
+            totalSales += val;
+            count++;
+        });
+        document.getElementById('totalSales').innerText = totalSales.toFixed(2) + ' د.ل';
+        let avg = count > 0 ? totalSales / count : 0;
+        document.getElementById('avgSale').innerText = avg.toFixed(2) + ' د.ل';
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pos-container {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .products-section {
+        flex: 2;
+        min-width: 300px;
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.08);
+    }
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .product-card {
+        border: 1px solid #eee;
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .product-card:hover {
+        transform: translateY(-5px);
+        border-color: #e74c3c;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .product-card .product-name {
+        font-weight: bold;
+        font-size: 13px;
+        margin: 5px 0;
+    }
+    .product-card .product-price {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+    .cart-section {
+        flex: 1.2;
+        min-width: 320px;
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.08);
+    }
+    .cart-items {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .cart-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .cart-item-info {
+        flex: 2;
+    }
+    .cart-item-quantity input {
+        width: 50px;
+        text-align: center;
+    }
+    .cart-item-total {
+        font-weight: bold;
+        color: #e74c3c;
+        min-width: 70px;
+        text-align: right;
+    }
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+    }
+    .summary-row.total {
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-top: 2px solid #eee;
+        margin-top: 10px;
+        padding-top: 10px;
+    }
+    .payment-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin: 15px 0;
+    }
+    .barcode-input input {
+        text-align: center;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-cash-register text-primary"></i> {{ title }}</h2>
+        <a href="{% url 'sales:sale_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> العودة</a>
+    </div>
+
+    <div class="pos-container">
+        <!-- قسم المنتجات -->
+        <div class="products-section">
+            <h5><i class="fas fa-boxes"></i> المنتجات</h5>
+            <div class="barcode-input mb-3">
+                <input type="text" id="barcodeInput" class="form-control" placeholder="👆 امسح الباركود أو اكتب رقم المنتج" autofocus>
+            </div>
+            <input type="text" id="searchInput" class="form-control mb-3" placeholder="بحث عن منتج...">
+            <div class="products-grid" id="productsGrid">
+                {% for product in products %}
+                <div class="product-card" data-id="{{ product.id }}" data-name="{{ product.name }}" data-price="{{ product.sale_price }}" data-unit="{{ product.get_unit_display }}" data-stock="{{ product.current_quantity }}">
+                    <div class="product-name">{{ product.name|truncatechars:20 }}</div>
+                    <div class="product-price">{{ product.sale_price }} د.ل</div>
+                    <div class="product-stock small text-muted">المتبقي: {{ product.current_quantity|floatformat:0 }} {{ product.get_unit_display }}</div>
+                </div>
+                {% empty %}
+                <div class="text-muted">لا توجد منتجات</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- قسم السلة والفاتورة -->
+        <div class="cart-section">
+            <h5><i class="fas fa-shopping-cart text-success"></i> سلة المشتريات</h5>
+            <div class="row mb-2">
+                <div class="col-8">
+                    <select id="customerSelect" class="form-select">
+                        <option value="">-- اختر عميل (اختياري) --</option>
+                        {% for c in customers %}
+                        <option value="{{ c.id }}">{{ c.name }} - {{ c.phone }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-4">
+                    <select id="warehouseSelect" class="form-select">
+                        {% for w in warehouses %}
+                        <option value="{{ w.id }}">{{ w.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="cartItems" class="cart-items">
+                {% if cart %}
+                    {% for id, item in cart.items %}
+                    <div class="cart-item" data-id="{{ id }}">
+                        <div class="cart-item-info">
+                            <div class="fw-bold">{{ item.name }}</div>
+                            <div class="small">{{ item.price }} د.ل / {{ item.unit }}</div>
+                        </div>
+                        <div class="cart-item-quantity d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-secondary qty-minus">-</button>
+                            <input type="number" value="{{ item.quantity }}" min="1" class="qty-input form-control form-control-sm" style="width: 60px;">
+                            <button class="btn btn-sm btn-outline-secondary qty-plus">+</button>
+                        </div>
+                        <div class="cart-item-total">{% widthratio item.price|floatformat:2 1 item.quantity %} د.ل</div>
+                        <button class="btn btn-sm btn-danger remove-item"><i class="fas fa-trash"></i></button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-5">السلة فارغة</div>
+                {% endif %}
+            </div>
+
+            <hr>
+            <div class="cart-summary">
+                <div class="summary-row"><span>المجموع الفرعي:</span> <span id="subtotal">{{ subtotal|floatformat:2 }} د.ل</span></div>
+                <div class="summary-row"><span>الخصم:</span> <input type="number" id="discountInput" class="form-control form-control-sm d-inline-block w-25" value="0" step="0.5"> د.ل</div>
+                <div class="summary-row"><span>الضريبة:</span> <input type="number" id="taxInput" class="form-control form-control-sm d-inline-block w-25" value="0" step="0.5"> د.ل</div>
+                <div class="summary-row"><span>الشحن:</span> <input type="number" id="shippingInput" class="form-control form-control-sm d-inline-block w-25" value="0" step="0.5"> د.ل</div>
+                <div class="summary-row total"><span>الإجمالي:</span> <span id="totalAmount">{{ total|floatformat:2 }} د.ل</span></div>
+            </div>
+
+            <div class="payment-buttons">
+                <button class="btn btn-primary" id="cashBtn" data-method="cash"><i class="fas fa-money-bill"></i> نقدي</button>
+                <button class="btn btn-info" id="cardBtn" data-method="card"><i class="fas fa-credit-card"></i> بطاقة</button>
+                <button class="btn btn-warning" id="creditBtn" data-method="credit"><i class="fas fa-clock"></i> آجل</button>
+            </div>
+
+            <button class="btn btn-success w-100" id="checkoutBtn"><i class="fas fa-check-circle"></i> إتمام البيع</button>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة الدفع -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5>إتمام البيع</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <div class="mb-3"><label>الإجمالي المطلوب</label><h3 id="modalTotal" class="text-success"></h3></div>
+                <div class="mb-3"><label>المدفوع من العميل</label><input type="number" id="paidAmount" class="form-control" step="0.5" value="0"></div>
+                <div class="mb-3"><label>الباقي</label><h4 id="changeAmount" class="text-info">0.00 د.ل</h4></div>
+                <input type="hidden" id="selectedPaymentMethod" value="cash">
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-success" id="confirmPayment">تأكيد البيع</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedMethod = 'cash';
+    // تحديث الإجماليات
+    function updateTotals() {
+        let subtotal = 0;
+        document.querySelectorAll('.cart-item').forEach(item => {
+            const price = parseFloat(item.querySelector('.cart-item-info div.small')?.innerText?.split(' ')[0]) || 0;
+            const qty = parseInt(item.querySelector('.qty-input').value) || 0;
+            subtotal += price * qty;
+        });
+        const discount = parseFloat(document.getElementById('discountInput').value) || 0;
+        const tax = parseFloat(document.getElementById('taxInput').value) || 0;
+        const shipping = parseFloat(document.getElementById('shippingInput').value) || 0;
+        const total = Math.max(0, subtotal - discount + tax + shipping);
+        document.getElementById('subtotal').innerHTML = subtotal.toFixed(2) + ' د.ل';
+        document.getElementById('totalAmount').innerHTML = total.toFixed(2) + ' د.ل';
+    }
+
+    function addToCart(productId, quantity=1) {
+        fetch("{% url 'sales:add_to_cart' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: `product_id=${productId}&quantity=${quantity}`
+        }).then(r=>r.json()).then(data=>{ if(data.status==='success') location.reload(); else alert(data.message); });
+    }
+    function removeFromCart(productId) {
+        fetch("{% url 'sales:remove_from_cart' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: `product_id=${productId}`
+        }).then(r=>r.json()).then(data=>{ if(data.status==='success') location.reload(); });
+    }
+    function updateCart(productId, quantity) {
+        fetch("{% url 'sales:update_cart' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: `product_id=${productId}&quantity=${quantity}`
+        }).then(r=>r.json()).then(data=>{ if(data.status==='success') location.reload(); else alert(data.message); });
+    }
+
+    document.getElementById('barcodeInput').addEventListener('keypress', function(e) {
+        if(e.key==='Enter') {
+            let barcode = this.value.trim();
+            if(!barcode) return;
+            fetch(`/sales/api/get-product/${barcode}/`).then(r=>r.json()).then(data=>{
+                if(data.status==='success') addToCart(data.product.id);
+                else alert('المنتج غير موجود');
+            });
+            this.value='';
+        }
+    });
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        let term = this.value.toLowerCase();
+        document.querySelectorAll('.product-card').forEach(card=>{
+            let name = card.getAttribute('data-name')?.toLowerCase()||'';
+            card.style.display = name.includes(term) ? 'block' : 'none';
+        });
+    });
+    document.querySelectorAll('.product-card').forEach(card=>{
+        card.addEventListener('click', function(){ addToCart(this.getAttribute('data-id')); });
+    });
+
+    document.addEventListener('click', function(e) {
+        if(e.target.classList.contains('qty-plus')) {
+            let row = e.target.closest('.cart-item');
+            let id = row.getAttribute('data-id');
+            let input = row.querySelector('.qty-input');
+            updateCart(id, parseInt(input.value)+1);
+        }
+        if(e.target.classList.contains('qty-minus')) {
+            let row = e.target.closest('.cart-item');
+            let id = row.getAttribute('data-id');
+            let input = row.querySelector('.qty-input');
+            let qty = parseInt(input.value)-1;
+            if(qty>=1) updateCart(id, qty);
+        }
+        if(e.target.classList.contains('remove-item')) {
+            let row = e.target.closest('.cart-item');
+            removeFromCart(row.getAttribute('data-id'));
+        }
+    });
+
+    document.getElementById('discountInput').addEventListener('input', updateTotals);
+    document.getElementById('taxInput').addEventListener('input', updateTotals);
+    document.getElementById('shippingInput').addEventListener('input', updateTotals);
+
+    document.querySelectorAll('.payment-buttons button').forEach(btn=>{
+        btn.addEventListener('click', function(){
+            selectedMethod = this.getAttribute('data-method');
+            let total = parseFloat(document.getElementById('totalAmount').innerHTML);
+            document.getElementById('modalTotal').innerHTML = total.toFixed(2)+' د.ل';
+            document.getElementById('selectedPaymentMethod').value = selectedMethod;
+            document.getElementById('paidAmount').value = total;
+            document.getElementById('changeAmount').innerHTML = '0.00 د.ل';
+            new bootstrap.Modal(document.getElementById('paymentModal')).show();
+        });
+    });
+    document.getElementById('paidAmount').addEventListener('input', function(){
+        let total = parseFloat(document.getElementById('modalTotal').innerHTML);
+        let paid = parseFloat(this.value)||0;
+        let change = Math.max(0, paid-total);
+        document.getElementById('changeAmount').innerHTML = change.toFixed(2)+' د.ل';
+    });
+    document.getElementById('confirmPayment').addEventListener('click', function(){
+        let total = parseFloat(document.getElementById('modalTotal').innerHTML);
+        let paid = parseFloat(document.getElementById('paidAmount').value)||0;
+        if(paid < total) { alert('المبلغ المدفوع أقل من الإجمالي'); return; }
+        let form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{% url 'sales:sale_add' %}";
+        let fields = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            discount: document.getElementById('discountInput').value,
+            tax: document.getElementById('taxInput').value,
+            shipping: document.getElementById('shippingInput').value,
+            paid_amount: paid,
+            payment_method: selectedMethod,
+            customer: document.getElementById('customerSelect').value,
+            warehouse: document.getElementById('warehouseSelect').value,
+            notes: ''
+        };
+        for(let [k,v] of Object.entries(fields)) {
+            let inp = document.createElement('input');
+            inp.type='hidden'; inp.name=k; inp.value=v;
+            form.appendChild(inp);
+        }
+        document.body.appendChild(form);
+        form.submit();
+    });
+    updateTotals();
+</script>
+{% endblock %}

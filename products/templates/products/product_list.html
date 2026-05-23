@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}المنتجات - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-boxes text-primary"></i>
+                    قائمة المنتجات
+                </h2>
+                <a href="{% url 'products:product_add' %}" class="btn btn-primary-custom">
+                    <i class="fas fa-plus"></i>
+                    إضافة منتج جديد
+                </a>
+            </div>
+
+            <!-- بطاقة البحث والفلترة -->
+            <div class="card card-custom mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" 
+                                       name="search" 
+                                       class="form-control form-control-lg" 
+                                       placeholder="ابحث باسم المنتج أو الباركود..."
+                                       value="{{ search }}">
+                                <button class="btn btn-primary-custom" type="submit">
+                                    <i class="fas fa-search"></i> بحث
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="category" class="form-select form-control-lg">
+                                <option value="">جميع التصنيفات</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ cat.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            {% if search or selected_category %}
+                                <a href="{% url 'products:product_list' %}" class="btn btn-secondary btn-lg w-100">
+                                    <i class="fas fa-times"></i> إلغاء
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- جدول المنتجات -->
+            <div class="card card-custom">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;">الصورة</th>
+                                    <th>المنتج</th>
+                                    <th>الباركود</th>
+                                    <th>التصنيف</th>
+                                    <th>وحدة البيع</th>
+                                    <th>سعر الشراء</th>
+                                    <th>سعر البيع</th>
+                                    <th>الكمية</th>
+                                    <th>الحالة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if products %}
+                                    {% for product in products %}
+                                    <tr>
+                                        <td class="text-center">
+                                            {% if product.image %}
+                                                <img src="{{ product.image.url }}" alt="{{ product.name }}" 
+                                                     style="width: 45px; height: 45px; object-fit: cover; border-radius: 8px;">
+                                            {% else %}
+                                                <i class="fas fa-box fa-2x text-muted"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-bold">{{ product.name }}</td>
+                                        <td>{{ product.barcode|default:"—" }}</td>
+                                        <td>{{ product.category.name }}</td>
+                                        <td>{{ product.get_unit_display }}</td>
+                                        <td>{{ product.purchase_price }} د.ل</td>
+                                        <td class="text-success fw-bold">{{ product.sale_price }} د.ل</td>
+                                        <td class="{% if product.current_quantity <= product.min_quantity %}text-danger fw-bold{% else %}text-success{% endif %}">
+                                            {{ product.current_quantity }}
+                                        </td>
+                                        <td>
+                                            {% if product.is_active %}
+                                                <span class="badge bg-success">مفعل</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">غير مفعل</span>
+                                            {% endif %}
+                                            {% if product.is_low_stock %}
+                                                <span class="badge bg-warning text-dark">مخزون منخفض</span>
+                                            {% endif %}
+                                            {% if product.current_quantity == 0 %}
+                                                <span class="badge bg-danger">نفذ</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-sm btn-info" title="عرض">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'products:product_edit' product.pk %}" class="btn btn-sm btn-warning" title="تعديل">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-sm btn-danger" title="حذف">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="10" class="text-center py-5">
+                                            <i class="fas fa-box-open fa-3x text-muted mb-3 d-block"></i>
+                                            <h5 class="text-muted">لا توجد منتجات</h5>
+                                            <a href="{% url 'products:product_add' %}" class="btn btn-primary-custom mt-2">
+                                                <i class="fas fa-plus"></i> أضف أول منتج
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- الترقيم -->
+                {% if is_paginated %}
+                <div class="card-footer bg-white">
+                    <nav aria-label="التنقل بين الصفحات">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><a class="page-link" href="#"><i class="fas fa-chevron-right"></i></a></li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><a class="page-link" href="#"><i class="fas fa-chevron-left"></i></a></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

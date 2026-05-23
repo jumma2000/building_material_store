@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}لوحة التحكم - نظام إدارة متجر مواد البناء{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="mb-4">
+                <h2><i class="fas fa-chart-line text-primary"></i> لوحة التحكم الرئيسية</h2>
+                <p class="text-muted">مرحباً بك في لوحة تحكم نظام إدارة متجر مواد البناء</p>
+            </div>
+
+            <!-- بطاقات الإحصائيات الأساسية -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-primary text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div><h6 class="mb-0">المنتجات</h6><h2 class="mb-0">{{ total_products }}</h2></div>
+                                <i class="fas fa-boxes fa-3x opacity-50"></i>
+                            </div>
+                            <div class="mt-2"><small><i class="fas fa-check-circle"></i> نشط: {{ active_products }}</small></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-danger text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div><h6 class="mb-0">مخزون منخفض</h6><h2 class="mb-0">{{ low_stock_products }}</h2></div>
+                                <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                            </div>
+                            <div class="mt-2"><small><i class="fas fa-ban"></i> نفذ: {{ out_of_stock }}</small></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-success text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div><h6 class="mb-0">المبيعات</h6><h2 class="mb-0">{{ total_sales|floatformat:0 }} د.ل</h2></div>
+                                <i class="fas fa-chart-line fa-3x opacity-50"></i>
+                            </div>
+                            <div class="mt-2"><small><i class="fas fa-file-invoice"></i> {{ total_sale_invoices }} فاتورة</small></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-info text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div><h6 class="mb-0">المشتريات</h6><h2 class="mb-0">{{ total_purchases|floatformat:0 }} د.ل</h2></div>
+                                <i class="fas fa-shopping-cart fa-3x opacity-50"></i>
+                            </div>
+                            <div class="mt-2"><small><i class="fas fa-file-invoice"></i> {{ total_purchase_invoices }} فاتورة</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بطاقات الربح والعملاء والمخازن -->
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-warning text-dark h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div><h6 class="mb-0">إجمالي الربح</h6><h2 class="mb-0">{{ total_profit|floatformat:2 }} د.ل</h2></div>
+                                <i class="fas fa-chart-line fa-3x opacity-50"></i>
+                            </div>
+                            <div class="mt-2"><small>هامش الربح: {{ profit_margin|floatformat:1 }}%</small></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-secondary text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div><h6 class="mb-0">العملاء</h6><h2 class="mb-0">{{ total_customers }}</h2></div>
+                                <i class="fas fa-users fa-3x opacity-50"></i>
+                            </div>
+                            <div class="mt-2"><small><i class="fas fa-truck"></i> موردين: {{ total_suppliers }}</small></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-dark text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div><h6 class="mb-0">المخازن</h6><h2 class="mb-0">{{ total_warehouses }}</h2></div>
+                                <i class="fas fa-warehouse fa-3x opacity-50"></i>
+                            </div>
+                            <div class="mt-2"><small><i class="fas fa-boxes"></i> مخزن نشط</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- جداول: مخزون منخفض + أفضل المنتجات -->
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card card-custom h-100">
+                        <div class="card-header bg-white"><h5 class="mb-0"><i class="fas fa-exclamation-triangle text-warning"></i> المنتجات منخفضة المخزون</h5></div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light"><tr><th>المنتج</th><th>الكمية</th><th>الحد الأدنى</th><th>الحالة</th></tr></thead>
+                                    <tbody>
+                                        {% if low_stock_list %}{% for product in low_stock_list %}
+                                        <tr><td>{{ product.name }}</td><td class="{% if product.current_quantity == 0 %}text-danger{% else %}text-warning{% endif %} fw-bold">{{ product.current_quantity }} {{ product.get_unit_display }}</td><td>{{ product.min_quantity }}</td><td>{% if product.current_quantity == 0 %}<span class="badge bg-danger">نفذ</span>{% else %}<span class="badge bg-warning text-dark">منخفض</span>{% endif %}</td></tr>
+                                        {% endfor %}{% else %}<tr><td colspan="4" class="text-center text-muted">لا توجد منتجات منخفضة المخزون</td></tr>{% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white"><a href="{% url 'reports:inventory_report' %}" class="btn btn-sm btn-primary"><i class="fas fa-chart-bar"></i> تقرير المخزون</a></div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card card-custom h-100">
+                        <div class="card-header bg-white"><h5 class="mb-0"><i class="fas fa-star text-warning"></i> أفضل المنتجات مبيعاً</h5></div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light"><tr><th>المنتج</th><th>الكمية المباعة</th><th>الإيراد</th></tr></thead>
+                                    <tbody>
+                                        {% if top_products %}{% for product in top_products %}<tr><td>{{ product.product__name }}</td><td class="fw-bold">{{ product.total_quantity|floatformat:0 }}</td><td class="text-success">{{ product.total_revenue|floatformat:2 }} د.ل</td></tr>{% endfor %}{% else %}<tr><td colspan="3" class="text-center text-muted">لا توجد مبيعات حتى الآن</td></tr>{% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- أحدث الفواتير -->
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card card-custom h-100">
+                        <div class="card-header bg-white"><h5 class="mb-0"><i class="fas fa-shopping-cart text-primary"></i> أحدث فواتير الشراء</h5></div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light"><tr><th>رقم الفاتورة</th><th>المورد</th><th>التاريخ</th><th>الإجمالي</th></tr></thead>
+                                    <tbody>
+                                        {% for inv in recent_purchases %}<tr><td>{{ inv.invoice_number }}</td><td>{{ inv.supplier.name }}</td><td>{{ inv.invoice_date|date:"Y-m-d" }}</td><td class="text-success">{{ inv.get_total|floatformat:2 }} د.ل</td></tr>{% empty %}<tr><td colspan="4" class="text-center text-muted">لا توجد فواتير شراء</td></tr>{% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white"><a href="{% url 'reports:purchases_report' %}" class="btn btn-sm btn-primary"><i class="fas fa-chart-line"></i> تقرير المشتريات</a></div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card card-custom h-100">
+                        <div class="card-header bg-white"><h5 class="mb-0"><i class="fas fa-file-invoice text-success"></i> أحدث فواتير البيع</h5></div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light"><tr><th>رقم الفاتورة</th><th>العميل</th><th>التاريخ</th><th>الإجمالي</th></tr></thead>
+                                    <tbody>
+                                        {% for inv in recent_sales %}<tr><td>{{ inv.invoice_number }}</td><td>{{ inv.customer.name|default:"زائر" }}</td><td>{{ inv.invoice_date|date:"Y-m-d H:i" }}</td><td class="text-success">{{ inv.total|floatformat:2 }} د.ل</td></tr>{% empty %}<tr><td colspan="4" class="text-center text-muted">لا توجد فواتير بيع</td></tr>{% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white"><a href="{% url 'reports:sales_report' %}" class="btn btn-sm btn-primary"><i class="fas fa-chart-line"></i> تقرير المبيعات</a><a href="{% url 'sales:sale_add' %}" class="btn btn-sm btn-success ms-2"><i class="fas fa-cash-register"></i> بيع جديد</a></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- روابط سريعة -->
+            <div class="row"><div class="col-12"><div class="card card-custom"><div class="card-header bg-white"><h5 class="mb-0"><i class="fas fa-link text-info"></i> روابط سريعة</h5></div><div class="card-body"><div class="row"><div class="col-md-2 col-6 mb-2"><a href="{% url 'customers:customer_list' %}" class="btn btn-outline-primary w-100"><i class="fas fa-users"></i> العملاء</a></div><div class="col-md-2 col-6 mb-2"><a href="{% url 'suppliers:supplier_list' %}" class="btn btn-outline-warning w-100"><i class="fas fa-truck"></i> الموردين</a></div><div class="col-md-2 col-6 mb-2"><a href="{% url 'products:product_list' %}" class="btn btn-outline-success w-100"><i class="fas fa-boxes"></i> المنتجات</a></div><div class="col-md-2 col-6 mb-2"><a href="{% url 'purchases:purchase_list' %}" class="btn btn-outline-info w-100"><i class="fas fa-shopping-cart"></i> المشتريات</a></div><div class="col-md-2 col-6 mb-2"><a href="{% url 'sales:sale_list' %}" class="btn btn-outline-danger w-100"><i class="fas fa-file-invoice"></i> المبيعات</a></div><div class="col-md-2 col-6 mb-2"><a href="{% url 'sales:sale_add' %}" class="btn btn-outline-secondary w-100"><i class="fas fa-cash-register"></i> POS</a></div></div></div></div></div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
