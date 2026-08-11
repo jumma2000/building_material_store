@@ -2,7 +2,7 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}{{ title }} - نظام إدارة متجر مواد البناء{% endblock %}
+{% block title %}{{ title }} - نظام إدارة متجر مواد التنظيف{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -41,7 +41,7 @@
 
             <div class="card card-custom">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="fas fa-info-circle text-info"></i> معلومات المنتج (مواد بناء)</h5>
+                    <h5 class="mb-0"><i class="fas fa-info-circle text-info"></i> معلومات المنتج (مواد تنظيف)</h5>
                 </div>
                 <div class="card-body">
                     <form method="POST" enctype="multipart/form-data" novalidate>
@@ -120,9 +120,9 @@
                             </div>
                         </div>
 
-                        <!-- حقول خاصة بمواد البناء -->
+                        <!-- حقول خاصة بمواد التنظيف -->
                         <hr class="my-4">
-                        <h5 class="mb-3"><i class="fas fa-hard-hat text-secondary"></i> خصائص إضافية (مواد بناء)</h5>
+                        <h5 class="mb-3"><i class="fas fa-pump-soap text-secondary"></i> خصائص إضافية (مواد تنظيف)</h5>
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="mb-3">
@@ -135,7 +135,7 @@
                             <div class="col-md-3">
                                 <div class="mb-3">
                                     <label for="{{ form.length_m.id_for_label }}" class="form-label fw-bold">
-                                        <i class="fas fa-arrows-alt-h"></i> {{ form.length_m.label }}
+                                        <i class="fas fa-ruler-combined"></i> {{ form.length_m.label }}
                                     </label>
                                     {{ form.length_m }}
                                 </div>
@@ -215,7 +215,7 @@
                             <ul class="mb-0 mt-2">
                                 <li>الباركود يمكن مسحه مباشرة من الماسح الضوئي في شاشة البيع</li>
                                 <li>الحد الأدنى للتنبيه يساعدك في معرفة المنتجات التي تحتاج لإعادة طلب</li>
-                                <li>الحقول الإضافية (الوزن، الطول، اللون، الشركة المصنعة) خاصة بمواد البناء</li>
+                                <li>الحقول الإضافية (الوزن/الحجم، المقاس، الرائحة/اللون، الشركة المصنعة) خاصة بمواد التنظيف</li>
                             </ul>
                         </div>
 
@@ -232,7 +232,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // إظهار/إخفاء حقل تاريخ الانتهاء
         const hasExpiryCheckbox = document.getElementById('{{ form.has_expiry.id_for_label }}');
         const expiryDiv = document.getElementById('expiry_date_div');
         function toggleExpiry() {
@@ -244,7 +243,6 @@
             toggleExpiry();
         }
 
-        // إضافة كلاس form-control لجميع الحقول
         const inputs = document.querySelectorAll('input, select, textarea');
         inputs.forEach(input => {
             if (!input.classList.contains('form-check-input') && input.type !== 'checkbox' && input.type !== 'file') {

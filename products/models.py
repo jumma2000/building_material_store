@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Category(models.Model):
-    """نموذج التصنيف - لتصنيف منتجات مواد البناء"""
+    """نموذج التصنيف - لتصنيف منتجات مواد التنظيف"""
     
     name = models.CharField(max_length=100, verbose_name="اسم التصنيف")
     description = models.CharField(max_length=250, blank=True, null=True, verbose_name="الوصف")
@@ -17,22 +17,19 @@ class Category(models.Model):
 
 
 class Product(models.Model):
-    """نموذج المنتج - خاص بمواد البناء"""
+    """نموذج المنتج - خاص بمواد التنظيف"""
     
-    # وحدات القياس الخاصة بمواد البناء
+    # وحدات القياس الخاصة بمواد التنظيف
     UNIT_CHOICES = [
-        ('bag', 'كيس'),
         ('piece', 'قطعة'),
-        ('meter', 'متر'),
-        ('square_meter', 'متر مربع'),
-        ('ton', 'طن'),
-        ('kg', 'كيلوجرام'),
-        ('barrel', 'برميل'),
+        ('bottle', 'قنينة'),
         ('gallon', 'جالون'),
-        ('box', 'كرتونة'),
-        ('roll', 'لفة'),
-        ('sheet', 'لوح'),
         ('liter', 'لتر'),
+        ('ml', 'مليلتر'),
+        ('box', 'كرتونة'),
+        ('packet', 'باكو'),
+        ('dozen', 'دزينة'),
+        ('drum', 'برميل'),
     ]
     
     # المعلومات الأساسية
@@ -50,14 +47,14 @@ class Product(models.Model):
     current_quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="الكمية الحالية")
     min_quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="الحد الأدنى للتنبيه")
     
-    # حقول خاصة بمواد البناء
-    weight_kg = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="الوزن (كجم)")
-    length_m = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="الطول (متر)")
-    color = models.CharField(max_length=50, blank=True, null=True, verbose_name="اللون")
+    # حقول خاصة بمواد التنظيف
+    weight_kg = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="الوزن / الحجم (كجم/لتر)")
+    length_m = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="الأبعاد (متر)")
+    color = models.CharField(max_length=50, blank=True, null=True, verbose_name="الرائحة / اللون")
     manufacturer = models.CharField(max_length=200, blank=True, null=True, verbose_name="الشركة المصنعة")
     
-    # الصلاحية (معظم مواد البناء ليس لها صلاحية، لكن نترك الخيار)
-    has_expiry = models.BooleanField(default=False, verbose_name="له تاريخ انتهاء")
+    # الصلاحية (مواد التنظيف غالباً لها تاريخ صلاحية أو إنتاج مهم)
+    has_expiry = models.BooleanField(default=True, verbose_name="له تاريخ انتهاء")
     expiry_date = models.DateField(blank=True, null=True, verbose_name="تاريخ الانتهاء")
     
     # معلومات إضافية
@@ -86,6 +83,7 @@ class Product(models.Model):
         verbose_name_plural = "المنتجات"
         ordering = ['category', 'name']
 
+
 class StockMovement(models.Model):
     """نموذج حركة المخزون - لتسجيل كل حركة دخول وخروج للمنتجات"""
     
@@ -106,7 +104,7 @@ class StockMovement(models.Model):
     reference_type = models.CharField(max_length=50, blank=True, null=True, verbose_name="نوع المرجع")
     reference_id = models.PositiveIntegerField(blank=True, null=True, verbose_name="رقم المرجع")
     
-    # معلومات إضافية خاصة بمواد البناء
+    # معلومات إضافية خاصة بمواد التنظيف
     expiry_date = models.DateField(blank=True, null=True, verbose_name="تاريخ الانتهاء")
     price_at_movement = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="السعر وقت الحركة")
     notes = models.CharField(max_length=500, blank=True, null=True, verbose_name="ملاحظات")

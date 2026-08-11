@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, get_object_or_404
 from django.db import transaction
 from django.db.models import Q
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from .models import PurchaseInvoice, PurchaseDetail
 from suppliers.models import Supplier
 from warehouses.models import Warehouse
@@ -21,19 +21,26 @@ class PurchaseInvoiceListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        search = self.request.GET.get('search', '')
-        if search:
-            queryset = queryset.filter(
-                Q(invoice_number__icontains=search) |
-                Q(supplier__name__icontains=search) |
-                Q(supplier_bill_number__icontains=search)
-            )
-        return queryset.order_by('-invoice_date')
+        try:
+            queryset = super().get_queryset()
+            search = self.request.GET.get('search', '').strip()
+            if search:
+                queryset = queryset.filter(
+                    Q(invoice_number__icontains=search) |
+                    Q(supplier__name__icontains=search) |
+                    Q(supplier_bill_number__icontains=search)
+                )
+            return queryset.order_by('-invoice_date')
+        except Exception as e:
+            messages.error(self.request, "حدث خطأ أثناء جلب أو بحث فواتير الشراء.")
+            return PurchaseInvoice.objects.none()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['search'] = self.request.GET.get('search', '')
+        try:
+            context['search'] = self.request.GET.get('search', '')
+        except Exception:
+            context['search'] = ''
         return context
 
 
@@ -45,7 +52,10 @@ class PurchaseInvoiceDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['total'] = self.object.get_total()
+        try:
+            context['total'] = self.object.get_total() if hasattr(self.object, 'get_total') else Decimal('0.00')
+        except Exception:
+            context['total'] = Decimal('0.00')
         return context
 
 
@@ -63,11 +73,16 @@ class PurchaseInvoiceCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'إضافة فاتورة شراء جديدة'
-        context['button_text'] = 'حفظ الفاتورة'
-        context['suppliers'] = Supplier.objects.filter(is_active=True)
-        context['warehouses'] = Warehouse.objects.filter(is_active=True)
-        context['products'] = Product.objects.filter(is_active=True)
+        try:
+            context['title'] = 'إضافة فاتورة شراء جديدة'
+            context['button_text'] = 'حفظ الفاتورة'
+            context['suppliers'] = Supplier.objects.filter(is_active=True)
+            context['warehouses'] = Warehouse.objects.filter(is_active=True)
+            context['products'] = Product.objects.filter(is_active=True)
+        except Exception:
+            context['suppliers'] = []
+            context['warehouses'] = []
+            context['products'] = []
         return context
 
     @transaction.atomic
@@ -88,21 +103,29 @@ class PurchaseInvoiceCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateV
                 for i in range(len(product_ids)):
                     if product_ids[i] and quantities[i]:
                         product = get_object_or_404(Product, id=product_ids[i])
-                        quantity = Decimal(quantities[i])
+                        try:
+                            quantity = Decimal(quantities[i])
+                            p_price = Decimal(purchase_prices[i]) if purchase_prices[i] else Decimal('0')
+                            s_price = Decimal(sale_prices[i]) if sale_prices[i] else Decimal('0')
+                            disc = Decimal(discounts[i]) if discounts[i] else Decimal('0')
+                        except (InvalidOperation, ValueError):
+                            raise ValidationError("توجد قيمة رقمية غير صالحة في تفاصيل المنتجات.")
+
+                        expiry = expiry_dates[i] if expiry_dates[i] else None
 
                         PurchaseDetail.objects.create(
                             invoice=self.object,
                             product=product,
                             quantity=quantity,
-                            purchase_price=Decimal(purchase_prices[i]) if purchase_prices[i] else 0,
-                            sale_price=Decimal(sale_prices[i]) if sale_prices[i] else 0,
-                            expiry_date=expiry_dates[i] if expiry_dates[i] else None,
-                            discount=Decimal(discounts[i]) if discounts[i] else 0
+                            purchase_price=p_price,
+                            sale_price=s_price,
+                            expiry_date=expiry,
+                            discount=disc
                         )
 
                         # تحديث المخزون
                         product.current_quantity += quantity
-                        product.purchase_price = Decimal(purchase_prices[i]) if purchase_prices[i] else product.purchase_price
+                        product.purchase_price = p_price if p_price > 0 else product.purchase_price
                         product.save()
 
                         # تسجيل حركة المخزون
@@ -113,17 +136,17 @@ class PurchaseInvoiceCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateV
                             quantity=quantity,
                             reference_type='purchase',
                             reference_id=self.object.id,
-                            expiry_date=expiry_dates[i] if expiry_dates[i] else None,
-                            price_at_movement=Decimal(purchase_prices[i]) if purchase_prices[i] else 0,
+                            expiry_date=expiry,
+                            price_at_movement=p_price,
                             notes=f'فاتورة شراء رقم {self.object.invoice_number}',
-                            created_by=request.user.username if request.user.is_authenticated else 'admin'
+                            created_by=request.user.username if request.user and request.user.is_authenticated else 'admin'
                         )
 
                 messages.success(request, self.success_message % {'invoice_number': self.object.invoice_number})
                 return response
             return self.form_invalid(form)
         except Exception as e:
-            messages.error(request, f'حدث خطأ: {str(e)}')
+            messages.error(request, f'حدث خطأ أثناء حفظ الفاتورة: {str(e)}')
             return redirect('purchases:purchase_add')
 
 
@@ -141,12 +164,18 @@ class PurchaseInvoiceUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'تعديل فاتورة شراء'
-        context['button_text'] = 'تحديث الفاتورة'
-        context['suppliers'] = Supplier.objects.filter(is_active=True)
-        context['warehouses'] = Warehouse.objects.filter(is_active=True)
-        context['products'] = Product.objects.filter(is_active=True)
-        context['details'] = self.get_object().details.all()
+        try:
+            context['title'] = 'تعديل فاتورة شراء'
+            context['button_text'] = 'تحديث الفاتورة'
+            context['suppliers'] = Supplier.objects.filter(is_active=True)
+            context['warehouses'] = Warehouse.objects.filter(is_active=True)
+            context['products'] = Product.objects.filter(is_active=True)
+            context['details'] = self.get_object().details.all()
+        except Exception:
+            context['suppliers'] = []
+            context['warehouses'] = []
+            context['products'] = []
+            context['details'] = []
         return context
 
     @transaction.atomic
@@ -176,16 +205,24 @@ class PurchaseInvoiceUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateV
             for i in range(len(product_ids)):
                 if product_ids[i] and quantities[i]:
                     product = get_object_or_404(Product, id=product_ids[i])
-                    quantity = Decimal(quantities[i])
+                    try:
+                        quantity = Decimal(quantities[i])
+                        p_price = Decimal(purchase_prices[i]) if purchase_prices[i] else Decimal('0')
+                        s_price = Decimal(sale_prices[i]) if sale_prices[i] else Decimal('0')
+                        disc = Decimal(discounts[i]) if discounts[i] else Decimal('0')
+                    except (InvalidOperation, ValueError):
+                        continue
+
+                    expiry = expiry_dates[i] if expiry_dates[i] else None
 
                     PurchaseDetail.objects.create(
                         invoice=invoice,
                         product=product,
                         quantity=quantity,
-                        purchase_price=Decimal(purchase_prices[i]) if purchase_prices[i] else 0,
-                        sale_price=Decimal(sale_prices[i]) if sale_prices[i] else 0,
-                        expiry_date=expiry_dates[i] if expiry_dates[i] else None,
-                        discount=Decimal(discounts[i]) if discounts[i] else 0
+                        purchase_price=p_price,
+                        sale_price=s_price,
+                        expiry_date=expiry,
+                        discount=disc
                     )
 
                     # تحديث المخزون (زيادة)
@@ -195,8 +232,8 @@ class PurchaseInvoiceUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateV
             messages.success(request, self.success_message % {'invoice_number': invoice.invoice_number})
             return response
         except Exception as e:
-            messages.error(request, f'حدث خطأ: {str(e)}')
-            return redirect('purchases:purchase_edit', pk=invoice.pk)
+            messages.error(request, f'حدث خطأ أثناء التعديل: {str(e)}')
+            return redirect('purchases:purchase_edit', pk=self.get_object().pk)
 
 
 class PurchaseInvoiceDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):

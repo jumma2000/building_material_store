@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
+from django.core.exceptions import ValidationError
 from .models import Customer
 
 
@@ -15,15 +16,20 @@ class CustomerListView(LoginRequiredMixin, ListView):
     paginate_by = 10
     
     def get_queryset(self):
-        queryset = super().get_queryset()
-        search = self.request.GET.get('search', '')
-        if search:
-            queryset = queryset.filter(
-                Q(name__icontains=search) |
-                Q(phone__icontains=search) |
-                Q(email__icontains=search)
-            )
-        return queryset
+        try:
+            queryset = super().get_queryset()
+            search = self.request.GET.get('search', '').strip()
+            if search:
+                queryset = queryset.filter(
+                    Q(name__icontains=search) |
+                    Q(phone__icontains=search) |
+                    Q(email__icontains=search)
+                )
+            return queryset
+        except Exception as e:
+            # حماية المنظومة من التوقف في حال حدث خطأ في البحث أو قاعدة البيانات
+            messages.error(self.request, "حدث خطأ أثناء البحث، يرجى المحاولة مرة أخرى.")
+            return Customer.objects.none()
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -39,6 +45,13 @@ class CustomerCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     success_url = reverse_lazy('customers:customer_list')
     success_message = "تم إضافة العميل <b>%(name)s</b> بنجاح"
     
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except (ValidationError, Exception) as e:
+            messages.error(self.request, "فشل في حفظ بيانات العميل، تأكد من صحة المدخلات.")
+            return self.form_invalid(form)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'إضافة عميل جديد'
@@ -54,6 +67,13 @@ class CustomerUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     success_url = reverse_lazy('customers:customer_list')
     success_message = "تم تعديل بيانات العميل <b>%(name)s</b> بنجاح"
     
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except (ValidationError, Exception) as e:
+            messages.error(self.request, "فشل في تحديث بيانات العميل، تأكد من صحة القيم المدخلة.")
+            return self.form_invalid(form)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'تعديل بيانات العميل'
@@ -69,8 +89,12 @@ class CustomerDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
     success_message = "تم حذف العميل بنجاح"
     
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, self.success_message)
-        return super().delete(request, *args, **kwargs)
+        try:
+            messages.success(self.request, self.success_message)
+            return super().delete(request, *args, **kwargs)
+        except Exception as e:
+            messages.error(self.request, "تعسّر حذف العميل لربطه ببيانات أخرى أو حدوث خطأ بالنظام.")
+            return reverse_lazy('customers:customer_list')
 
 
 class CustomerDetailView(LoginRequiredMixin, DetailView):
@@ -81,6 +105,9 @@ class CustomerDetailView(LoginRequiredMixin, DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # جلب آخر 10 فواتير للعميل
-        context['recent_invoices'] = self.object.invoices.all().order_by('-invoice_date')[:10]
+        try:
+            # جلب آخر 10 فواتير للعميل بأمان
+            context['recent_invoices'] = self.object.invoices.all().order_by('-invoice_date')[:10]
+        except Exception:
+            context['recent_invoices'] = []
         return context

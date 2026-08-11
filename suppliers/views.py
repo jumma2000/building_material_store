@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
+from django.core.exceptions import ValidationError
 from .models import Supplier
 
 
@@ -15,15 +16,19 @@ class SupplierListView(LoginRequiredMixin, ListView):
     paginate_by = 10
     
     def get_queryset(self):
-        queryset = super().get_queryset()
-        search = self.request.GET.get('search', '')
-        if search:
-            queryset = queryset.filter(
-                Q(name__icontains=search) |
-                Q(phone__icontains=search) |
-                Q(email__icontains=search)
-            )
-        return queryset
+        try:
+            queryset = super().get_queryset()
+            search = self.request.GET.get('search', '').strip()
+            if search:
+                queryset = queryset.filter(
+                    Q(name__icontains=search) |
+                    Q(phone__icontains=search) |
+                    Q(email__icontains=search)
+                )
+            return queryset
+        except Exception as e:
+            messages.error(self.request, "حدث خطأ أثناء البحث عن الموردين، يرجى المحاولة لاحقاً.")
+            return Supplier.objects.none()
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -39,6 +44,13 @@ class SupplierCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     success_url = reverse_lazy('suppliers:supplier_list')
     success_message = "تم إضافة المورد <b>%(name)s</b> بنجاح"
     
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except (ValidationError, Exception) as e:
+            messages.error(self.request, "فشل في حفظ بيانات المورد، تأكد من صحة المدخلات.")
+            return self.form_invalid(form)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'إضافة مورد جديد'
@@ -54,6 +66,13 @@ class SupplierUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     success_url = reverse_lazy('suppliers:supplier_list')
     success_message = "تم تعديل بيانات المورد <b>%(name)s</b> بنجاح"
     
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except (ValidationError, Exception) as e:
+            messages.error(self.request, "فشل في تحديث بيانات المورد، تأكد من صحة القيم المدخلة.")
+            return self.form_invalid(form)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'تعديل بيانات المورد'
@@ -69,8 +88,12 @@ class SupplierDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
     success_message = "تم حذف المورد بنجاح"
     
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, self.success_message)
-        return super().delete(request, *args, **kwargs)
+        try:
+            messages.success(self.request, self.success_message)
+            return super().delete(request, *args, **kwargs)
+        except Exception as e:
+            messages.error(self.request, "تعسّر حذف المورد لوجود فواتير أو ارتباطات سابقة مسجلة باسمه.")
+            return reverse_lazy('suppliers:supplier_list')
 
 
 class SupplierDetailView(LoginRequiredMixin, DetailView):
@@ -81,6 +104,9 @@ class SupplierDetailView(LoginRequiredMixin, DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # جلب آخر 10 فواتير شراء لهذا المورد
-        context['recent_invoices'] = self.object.invoices.all().order_by('-invoice_date')[:10]
+        try:
+            # جلب آخر 10 فواتير شراء لهذا المورد بأمان
+            context['recent_invoices'] = self.object.invoices.all().order_by('-invoice_date')[:10]
+        except Exception:
+            context['recent_invoices'] = []
         return context

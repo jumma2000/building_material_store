@@ -1,27 +1,21 @@
 from django.db import models
 
-# Create your models here.
-from django.db import models
-
-
 class Supplier(models.Model):
-    """نموذج المورد - شركات توريد مواد البناء"""
+    """نموذج المورد - شركات توريد مواد التنظيف"""
     
     name = models.CharField(max_length=200, verbose_name="اسم المورد")
     phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="رقم الهاتف")
     email = models.EmailField(blank=True, null=True, verbose_name="البريد الإلكتروني")
     address = models.CharField(max_length=300, blank=True, null=True, verbose_name="العنوان")
     
-    # حقل جديد خاص بمواد البناء: تصنيف المورد (إسمنت، حديد، خشب، دهانات، إلخ)
+    # حقل تصنيف المورد مخصص لمواد التنظيف
     SUPPLIER_CATEGORIES = [
-        ('cement', 'إسمنت وخرسانة'),
-        ('steel', 'حديد وتسليح'),
-        ('wood', 'أخشاب'),
-        ('paint', 'دهانات'),
-        ('ceramic', 'سيراميك وبورسلين'),
-        ('plumbing', 'سباكة'),
-        ('electrical', 'كهرباء'),
-        ('tools', 'أدوات'),
+        ('detergents', 'منظفات سائلة'),
+        ('powders', 'مساحيق غسيل'),
+        ('disinfectants', 'مطهرات ومعقمات'),
+        ('papers', 'ورقيات ومناديل'),
+        ('tools', 'أدوات ومعدات تنظيف'),
+        ('chemicals', 'مواد كيميائية خام'),
         ('general', 'عام'),
     ]
     category = models.CharField(max_length=20, choices=SUPPLIER_CATEGORIES, default='general', verbose_name="تصنيف المورد")
